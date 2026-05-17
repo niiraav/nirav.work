@@ -57,26 +57,26 @@
     }
 
     h1 {
-      font-size: clamp(36px, 5vw, 64px);
+      font-size: clamp(32px, 5vw, 64px);
       line-height: 1.05;
       letter-spacing: -0.03em;
     }
 
     h2 {
-      font-size: clamp(28px, 3.5vw, 48px);
+      font-size: clamp(24px, 3.5vw, 48px);
       line-height: 1.1;
       letter-spacing: -0.02em;
     }
 
     h3 {
-      font-size: clamp(20px, 2.5vw, 28px);
+      font-size: clamp(18px, 2.5vw, 28px);
       line-height: 1.2;
     }
 
     p { font-size: 16px; line-height: 1.6; }
 
     .subhead {
-      font-size: clamp(16px, 1.5vw, 18px);
+      font-size: clamp(15px, 1.5vw, 18px);
       color: var(--body);
       max-width: 560px;
     }
@@ -97,6 +97,7 @@
       cursor: pointer;
       text-decoration: none;
       transition: all 0.15s ease;
+      white-space: nowrap;
     }
 
     .btn-primary {
@@ -114,28 +115,29 @@
 
     /* Hero */
     .hero {
-      padding: 120px 0 var(--section-padding);
+      padding: 80px 0 48px;
       background: var(--canvas);
     }
 
     .hero-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 48px;
+      gap: 40px;
       align-items: center;
     }
 
     @media (min-width: 1024px) {
       .hero-grid {
-        grid-template-columns: 7fr 5fr;
+        grid-template-columns: 1fr 1fr;
         gap: 64px;
       }
+      .hero { padding: 120px 0 var(--section-padding); }
     }
 
     .hero-content {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     .hero-tag {
@@ -168,159 +170,82 @@
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
+      margin-top: 4px;
+    }
+
+    /* Hero email signup */
+    .hero-signup {
       margin-top: 8px;
+      max-width: 420px;
     }
 
-    /* Hero Mockup */
-    .hero-mockup {
-      background: var(--canvas);
-      border: 1px solid var(--hairline);
-      border-radius: var(--radius-xl);
-      padding: 24px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
-      overflow: hidden;
-    }
-
-    .phone-frame {
-      max-width: 280px;
-      margin: 0 auto;
-      background: var(--primary);
-      border-radius: 32px;
-      padding: 12px;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-    }
-
-    .phone-screen {
-      background: var(--canvas);
-      border-radius: 24px;
-      overflow: hidden;
-      aspect-ratio: 9/19;
+    .signup-form {
       display: flex;
       flex-direction: column;
+      gap: 10px;
     }
 
-    .app-header {
-      background: var(--primary);
-      color: var(--canvas);
-      padding: 16px;
-      font-weight: 600;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    @media (min-width: 480px) {
+      .signup-form {
+        flex-direction: row;
+        align-items: stretch;
+      }
     }
 
-    .app-header .logo-icon {
-      width: 28px;
-      height: 28px;
-      background: var(--canvas);
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      color: var(--primary);
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .app-content {
+    .signup-form input {
       flex: 1;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      overflow: hidden;
-    }
-
-    .job-card {
-      background: var(--surface-card);
-      border-radius: var(--radius-lg);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .job-photo {
-      width: 100%;
-      height: 120px;
-      background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
-      border-radius: var(--radius-md);
-      display: grid;
-      place-items: center;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .job-info h4 {
+      height: 44px;
+      padding: 10px 14px;
       font-size: 14px;
-      font-weight: 600;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
-
-    .job-info p {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .quote-preview {
-      background: var(--canvas);
+      font-family: inherit;
       border: 1px solid var(--hairline);
       border-radius: var(--radius-md);
-      padding: 12px;
+      outline: none;
+      transition: border-color 0.15s ease;
+      min-width: 0;
     }
 
-    .quote-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      padding: 4px 0;
-      border-bottom: 1px dashed var(--hairline-soft);
-    }
+    .signup-form input:focus { border-color: var(--primary); }
 
-    .quote-row:last-child { border-bottom: none; font-weight: 600; }
+    .signup-form .btn { flex-shrink: 0; }
 
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
+    .form-message {
+      font-size: 13px;
       font-weight: 500;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      background: #ecfdf5;
-      color: #065f46;
-      width: fit-content;
+      min-height: 18px;
+      margin-top: 4px;
     }
 
-    .app-nav {
-      display: flex;
-      justify-content: space-around;
-      padding: 12px;
-      border-top: 1px solid var(--hairline-soft);
-      background: var(--canvas);
+    .form-message.success { color: var(--success); }
+    .form-message.error { color: var(--error); }
+
+    .privacy-note {
+      font-size: 12px;
+      color: var(--muted-soft);
+      margin-top: 6px;
     }
 
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      font-size: 10px;
-      color: var(--muted);
+    .privacy-note a { color: var(--muted); }
+
+    /* Hero Image */
+    .hero-image {
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    .nav-item.active { color: var(--primary); font-weight: 500; }
-
-    .nav-icon {
-      width: 24px;
-      height: 24px;
-      background: var(--surface-card);
-      border-radius: 6px;
+    .hero-image img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
 
     /* Sections */
     section { padding: var(--section-padding) 0; }
+
+    @media (max-width: 768px) {
+      section { padding: 64px 0; }
+    }
 
     .section-header {
       text-align: center;
@@ -329,6 +254,10 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .section-header { margin-bottom: 40px; }
     }
 
     .section-label {
@@ -359,6 +288,10 @@
       gap: 16px;
     }
 
+    @media (max-width: 768px) {
+      .problem-card { padding: 24px; }
+    }
+
     .problem-icon {
       width: 44px;
       height: 44px;
@@ -367,7 +300,16 @@
       border: 1px solid var(--hairline);
       display: grid;
       place-items: center;
-      font-size: 20px;
+      color: var(--primary);
+    }
+
+    .problem-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
     }
 
     .problem-card h3 {
@@ -390,6 +332,11 @@
       padding-top: 16px;
     }
 
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted-soft);
+    }
+
     /* How it Works */
     .steps-grid {
       display: grid;
@@ -409,7 +356,10 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
-      position: relative;
+    }
+
+    @media (max-width: 768px) {
+      .step-card { padding: 24px; }
     }
 
     .step-number {
@@ -424,118 +374,17 @@
       place-items: center;
     }
 
-    .step-mockup {
+    .step-image {
+      border-radius: var(--radius-md);
+      overflow: hidden;
       background: var(--surface-card);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      min-height: 160px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
     }
 
-    .mock-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 12px;
-    }
-
-    .mock-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #e5e7eb, #d1d5db);
-      flex-shrink: 0;
-    }
-
-    .mock-line {
-      height: 8px;
-      background: var(--hairline);
-      border-radius: 4px;
-      flex: 1;
-    }
-
-    .mock-line.short { width: 60%; }
-
-    .mock-button {
-      height: 32px;
-      background: var(--primary);
-      border-radius: var(--radius-md);
-      margin-top: auto;
-    }
-
-    .mock-photo {
+    .step-image img {
       width: 100%;
-      height: 80px;
-      background: linear-gradient(135deg, #e5e7eb, #f3f4f6);
-      border-radius: var(--radius-md);
-      display: grid;
-      place-items: center;
-      font-size: 11px;
-      color: var(--muted);
+      height: auto;
+      display: block;
     }
-
-    /* CTA Band */
-    .cta-band {
-      background: var(--surface-card);
-      border-radius: var(--radius-lg);
-      padding: 64px 32px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .signup-form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 100%;
-      max-width: 420px;
-    }
-
-    @media (min-width: 480px) {
-      .signup-form {
-        flex-direction: row;
-        align-items: stretch;
-      }
-    }
-
-    .signup-form input {
-      flex: 1;
-      height: 44px;
-      padding: 10px 14px;
-      font-size: 14px;
-      font-family: inherit;
-      border: 1px solid var(--hairline);
-      border-radius: var(--radius-md);
-      outline: none;
-      transition: border-color 0.15s ease;
-    }
-
-    .signup-form input:focus { border-color: var(--primary); }
-
-    .signup-form .btn { flex-shrink: 0; }
-
-    .privacy-note {
-      font-size: 12px;
-      color: var(--muted-soft);
-    }
-
-    .privacy-note a { color: var(--muted); }
-
-    .form-message {
-      font-size: 14px;
-      font-weight: 500;
-      min-height: 20px;
-    }
-
-    .form-message.success { color: var(--success); }
-    .form-message.error { color: var(--error); }
 
     /* Footer */
     footer {
@@ -571,6 +420,7 @@
       font-size: 14px;
       color: var(--on-dark-soft);
       max-width: 280px;
+      line-height: 1.6;
     }
 
     .footer-col h4 {
@@ -601,20 +451,7 @@
       color: var(--muted-soft);
     }
 
-    /* UK Badge */
-    .uk-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    /* Animations */
+    /* Reveal animations */
     @media (prefers-reduced-motion: no-preference) {
       .reveal {
         opacity: 0;
@@ -641,52 +478,28 @@
           </div>
           <h1>Invoicing shouldn't take longer than the job</h1>
           <p class="subhead">
-            TradePad turns a WhatsApp photo + client name into a quote → invoice → payment link in 2 minutes. 
-            CIS tax handling built in for the UK.
+            TradePad turns a WhatsApp photo + client name into a quote → invoice → payment link in 2 minutes. Built for UK tradespeople.
           </p>
+          
+          <!-- Email signup in hero -->
+          <div class="hero-signup">
+            <p style="font-size: 15px; font-weight: 500; color: var(--primary); margin-bottom: 10px;">Be the first to try TradePad</p>
+            <form class="signup-form" id="signup-form">
+              <input type="email" id="email-input" placeholder="your@email.com" required>
+              <button type="submit" class="btn btn-primary">Join Early Access</button>
+            </form>
+            <p class="privacy-note">
+              We never share your email. <a href="privacy.html">Read our privacy policy</a>.
+            </p>
+            <div class="form-message" id="form-message"></div>
+          </div>
+
           <div class="hero-ctas">
-            <a href="#early-access" class="btn btn-primary">
-              Join the Early Access List
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </a>
             <a href="#how-it-works" class="btn btn-secondary">See how it works</a>
           </div>
         </div>
-        <div class="hero-mockup">
-          <div class="phone-frame">
-            <div class="phone-screen">
-              <div class="app-header">
-                <div class="logo-icon">T</div>
-                <span>TradePad</span>
-              </div>
-              <div class="app-content">
-                <div class="status-badge">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/></svg>
-                  Quote sent to Sarah M.
-                </div>
-                <div class="job-card">
-                  <div class="job-photo">Job photo</div>
-                  <div class="job-info">
-                    <h4>Bathroom renovation</h4>
-                    <p>Sarah Mitchell · 14 Oak Street</p>
-                  </div>
-                  <div class="quote-preview">
-                    <div class="quote-row"><span>Labor</span><span>£1,200</span></div>
-                    <div class="quote-row"><span>Materials</span><span>£340</span></div>
-                    <div class="quote-row"><span>CIS deduction</span><span>-£240</span></div>
-                    <div class="quote-row"><span>Total</span><span>£1,300</span></div>
-                  </div>
-                </div>
-              </div>
-              <div class="app-nav">
-                <div class="nav-item active"><div class="nav-icon"></div>Jobs</div>
-                <div class="nav-item"><div class="nav-icon"></div>Quotes</div>
-                <div class="nav-item"><div class="nav-icon"></div>Paid</div>
-              </div>
-            </div>
-          </div>
+        <div class="hero-image">
+          <img src="assets/HeroUI.png" alt="TradePad app interface showing job management, quotes, and payments" loading="eager">
         </div>
       </div>
     </div>
@@ -705,27 +518,29 @@
       </div>
       <div class="problem-grid">
         <div class="problem-card reveal">
-          <div class="problem-icon">⏱</div>
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
           <h3>You did the job. You forgot to invoice.</h3>
           <p>After a 10-hour day, paperwork is the last thing on your mind. Small jobs slip through the cracks — and that's £200-400/month gone to "I'll do it tomorrow."</p>
           <div class="stat-number">~£3,600/yr</div>
-          <p style="font-size: 13px; color: var(--muted-soft);">Lost to forgotten invoices</p>
+          <p class="stat-label">Lost to forgotten invoices</p>
         </div>
         <div class="problem-card reveal">
-          <div class="problem-icon">📋</div>
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
           <h3>CIS tax is a black box</h3>
           <p>Construction Industry Scheme means 20% of your pay goes to HMRC before you see it. Most tradespeople don't know what they can claim back until their accountant tells them in April.</p>
-          <div class="uk-badge">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
-            UK only
-          </div>
         </div>
         <div class="problem-card reveal">
-          <div class="problem-icon">💬</div>
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
           <h3>Chasing payments is awkward</h3>
           <p>Asking a customer for money feels worse than the job itself. So you wait. And wait. And cashflow tightens while the invoice sits unsent.</p>
           <div class="stat-number">14 days</div>
-          <p style="font-size: 13px; color: var(--muted-soft);">Average late payment delay</p>
+          <p class="stat-label">Average late payment delay</p>
         </div>
       </div>
     </div>
@@ -747,69 +562,26 @@
           <div class="step-number">1</div>
           <h3>Snap a photo</h3>
           <p>Take a photo of the job site. Add the client name and address. TradePad creates a job record instantly.</p>
-          <div class="step-mockup">
-            <div class="mock-photo">📷 Job site photo</div>
-            <div class="mock-row">
-              <div class="mock-avatar"></div>
-              <div>
-                <div class="mock-line short" style="width: 70%;"></div>
-                <div class="mock-line" style="width: 50%; margin-top: 4px;"></div>
-              </div>
-            </div>
+          <div class="step-image">
+            <img src="assets/Snap%20a%20photo.png" alt="Snap a photo of the job site" loading="lazy">
           </div>
         </div>
         <div class="step-card reveal">
           <div class="step-number">2</div>
           <h3>Send a quote</h3>
           <p>Add line items from your price list. TradePad calculates CIS deductions automatically for UK construction work.</p>
-          <div class="step-mockup">
-            <div class="mock-row"><span>Labour</span><span>£450</span></div>
-            <div class="mock-row"><span>Materials</span><span>£120</span></div>
-            <div class="mock-row" style="border-top: 1px dashed var(--hairline); padding-top: 8px;">
-              <span style="font-weight: 600;">Total</span>
-              <span style="font-weight: 600;">£570</span>
-            </div>
-            <div class="mock-button"></div>
+          <div class="step-image">
+            <img src="assets/send%20a%20quote.png" alt="Send a professional quote" loading="lazy">
           </div>
         </div>
         <div class="step-card reveal">
           <div class="step-number">3</div>
           <h3>Get paid</h3>
           <p>One tap converts the quote to an invoice with a payment link. Customer pays by card or bank transfer. You get notified instantly.</p>
-          <div class="step-mockup">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--success); display: grid; place-items: center; color: white; font-size: 14px;">✓</div>
-              <span style="font-weight: 600; font-size: 13px;">Payment received</span>
-            </div>
-            <div class="mock-line" style="width: 80%;"></div>
-            <div class="mock-line" style="width: 60%;"></div>
-            <div style="margin-top: auto; font-size: 11px; color: var(--muted); text-align: center;">
-              Paid in 2 hours · Stripe
-            </div>
+          <div class="step-image">
+            <img src="assets/get%20paid.png" alt="Get paid instantly" loading="lazy">
           </div>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA / Early Access -->
-  <section id="early-access">
-    <div class="container">
-      <div class="cta-band reveal">
-        <span class="section-label">Early access</span>
-        <h2>Be the first to try TradePad</h2>
-        <p class="subhead" style="max-width: 480px; margin: 0 auto;">
-          Join 50+ UK tradespeople on the early access list. 
-          No spam. Unsubscribe anytime.
-        </p>
-        <form class="signup-form" id="signup-form">
-          <input type="email" id="email-input" placeholder="your@email.com" required>
-          <button type="submit" class="btn btn-primary">Join Early Access</button>
-        </form>
-        <p class="privacy-note">
-          We never share your email. <a href="privacy.html">Read our privacy policy</a>.
-        </p>
-        <div class="form-message" id="form-message"></div>
       </div>
     </div>
   </section>
@@ -826,7 +598,6 @@
           <h4>Product</h4>
           <a href="#how-it-works">How it works</a>
           <a href="#problems">Problems we solve</a>
-          <a href="#early-access">Early access</a>
         </div>
         <div class="footer-col">
           <h4>Company</h4>
