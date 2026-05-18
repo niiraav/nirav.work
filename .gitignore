@@ -1,0 +1,6 @@
+idea-validator/.env
+idea-validator/__pycache__/
+idea-validator/sessions/*.json
+idea-validator/output/
+**/__pycache__/
+*.pyc
