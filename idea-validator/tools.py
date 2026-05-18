@@ -1,5 +1,5 @@
 import time
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from config import SEARCH_PLATFORMS, LEAD_BASE_SEGMENTS, SUPABASE_URL, SUPABASE_KEY
 
 _PAIN_TERMS = (
