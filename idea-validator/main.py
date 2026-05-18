@@ -4,9 +4,9 @@ idea-validator: Claude (Director) + Kimi K2.6 (Researcher) debate startup ideas
 through a 5-stage pipeline and output validated findings to Obsidian.
 
 Usage:
-  python main.py --niche "MOT Reminder SaaS" --start-stage 2
-  python main.py --mode fresh --lead-focus automotive
-  python main.py --resume session_20260517_143022 --stage 3
+  python3 main.py --niche "MOT Reminder SaaS" --start-stage 2
+  python3 main.py --mode fresh --lead-focus automotive
+  python3 main.py --resume session_20260517_143022 --stage 3
 """
 
 import argparse

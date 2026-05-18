@@ -102,22 +102,22 @@ Kimi model ID (`accounts/fireworks/models/kimi-k2p6`) is already set as the defa
 
 ```bash
 # Start fresh
-python main.py --mode fresh
+python3 main.py --mode fresh
 
 # Validate a specific niche from Stage 1
-python main.py --niche "MOT Reminder SaaS" --lead-focus automotive
+python3 main.py --niche "MOT Reminder SaaS" --lead-focus automotive
 
 # Start from Stage 2 (skip niche identification)
-python main.py --niche "MOT Reminder SaaS" --start-stage 2
+python3 main.py --niche "MOT Reminder SaaS" --start-stage 2
 
 # Resume a saved session at Stage 3
-python main.py --resume session_20260517_143022 --stage 3
+python3 main.py --resume session_20260517_143022 --stage 3
 
 # List all sessions
-python main.py --list
+python3 main.py --list
 
 # Run only Stages 2-4
-python main.py --niche "Beauty Salon Booking" --start-stage 2 --end-stage 4
+python3 main.py --niche "Beauty Salon Booking" --start-stage 2 --end-stage 4
 ```
 
 ---
@@ -150,7 +150,7 @@ These can enter the pipeline at Stage 2 or later:
 3. **Email Marketing for Vape/Restricted Ecom** — 1,100+ leads, banned from ad platforms
 
 ```bash
-python main.py --niche "MOT Reminder SaaS" --start-stage 2 --lead-focus automotive
+python3 main.py --niche "MOT Reminder SaaS" --start-stage 2 --lead-focus automotive
 ```
 
 ---
@@ -162,4 +162,4 @@ The gstack skills (`/browse`, `/investigate`, `/office-hours`) run inside Claude
 - You want a YC-style `/office-hours` diagnostic on a Stage 1 niche candidate
 - You want a CEO-level `/plan-ceo-review` on a Stage 4 solution concept
 
-Then paste the output into your next `python main.py` run by adding it to the session transcript JSON.
+Then paste the output into your next `python3 main.py` run by adding it to the session transcript JSON.
