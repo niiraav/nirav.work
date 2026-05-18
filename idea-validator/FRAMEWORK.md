@@ -90,11 +90,11 @@ Human review files include the exact unresolved disputes and a resume command to
 cd idea-validator
 pip install -r requirements.txt
 cp .env.example .env
-# Fill in ANTHROPIC_API_KEY, MOONSHOT_API_KEY, and OBSIDIAN_PATH
+# Fill in ANTHROPIC_API_KEY, FIREWORKS_API_KEY, and OBSIDIAN_PATH
 source .env
 ```
 
-Check your Moonshot API dashboard or OpenCode config for the exact Kimi K2.6 model ID and set it as `KIMI_MODEL` in `.env`.
+Kimi model ID (`accounts/fireworks/models/kimi-k2p6`) is already set as the default — no change needed.
 
 ---
 

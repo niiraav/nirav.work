@@ -3,10 +3,10 @@ import anthropic
 from openai import OpenAI
 from config import (
     ANTHROPIC_API_KEY,
-    MOONSHOT_API_KEY,
+    FIREWORKS_API_KEY,
     CLAUDE_MODEL,
     KIMI_MODEL,
-    MOONSHOT_BASE_URL,
+    KIMI_BASE_URL,
 )
 
 STAGE_NAMES = {
@@ -166,7 +166,7 @@ class ClaudeAgent:
 
 class KimiAgent:
     def __init__(self):
-        self.client = OpenAI(api_key=MOONSHOT_API_KEY, base_url=MOONSHOT_BASE_URL)
+        self.client = OpenAI(api_key=FIREWORKS_API_KEY, base_url=KIMI_BASE_URL)
 
     def turn(self, stage_num: int, search_results: str, transcript: str) -> str:
         parts = [f"## Stage {stage_num}: {STAGE_NAMES[stage_num]}"]

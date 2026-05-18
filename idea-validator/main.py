@@ -14,18 +14,18 @@ import json
 import os
 import sys
 from datetime import datetime
-from config import SESSIONS_DIR, ANTHROPIC_API_KEY, MOONSHOT_API_KEY
+from config import SESSIONS_DIR, ANTHROPIC_API_KEY, FIREWORKS_API_KEY
 
 
 def _check_env():
     missing = []
     if not ANTHROPIC_API_KEY:
         missing.append("ANTHROPIC_API_KEY")
-    if not MOONSHOT_API_KEY:
-        missing.append("MOONSHOT_API_KEY")
+    if not FIREWORKS_API_KEY:
+        missing.append("FIREWORKS_API_KEY")
     if missing:
         print(f"Error: missing environment variables: {', '.join(missing)}")
-        print("Copy .env.example to .env and fill in your keys, then: source .env")
+        print("Copy .env.example to .env, fill in keys (Anthropic + Fireworks.ai), then: source .env")
         sys.exit(1)
 
 

@@ -1,15 +1,14 @@
 import os
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-MOONSHOT_API_KEY = os.getenv("MOONSHOT_API_KEY", "")
+FIREWORKS_API_KEY = os.getenv("FIREWORKS_API_KEY", "")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 CLAUDE_MODEL = "claude-sonnet-4-6"
 
-# Check Moonshot API docs or OpenCode config for the exact Kimi K2.6 model ID
-KIMI_MODEL = os.getenv("KIMI_MODEL", "kimi-k2-0528")
-MOONSHOT_BASE_URL = "https://api.moonshot.cn/v1"
+KIMI_MODEL = os.getenv("KIMI_MODEL", "accounts/fireworks/models/kimi-k2p6")
+KIMI_BASE_URL = "https://api.fireworks.ai/inference/v1"
 
 MAX_ROUNDS_PER_STAGE = 3
 CONFIDENCE_THRESHOLD = 70  # advance stage when confidence >= this
