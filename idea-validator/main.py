@@ -1,147 +1,384 @@
 #!/usr/bin/env python3
 """
-idea-validator: Claude (Director) + Kimi K2.6 (Researcher) debate startup ideas
-through a 5-stage pipeline and output validated findings to Obsidian.
+idea-validator v2: Falsification Engine — Dual-Agent Deliberation
 
 Usage:
-  python main.py --niche "MOT Reminder SaaS" --start-stage 2
-  python main.py --mode fresh --lead-focus automotive
-  python main.py --resume session_20260517_143022 --stage 3
+  python main.py --manifest manifest.json --niche "MOT Reminder SaaS"
+  python main.py --test --manifest manifest.json --niche "MOT Reminder SaaS"
+  python main.py --resume session_20260518_132909 --stage 1
+  python main.py --resume session_20260518_132909 --stage 1 --non-interactive
+  python main.py --list
 """
 
 import argparse
 import json
 import os
 import sys
-from datetime import datetime
-from config import SESSIONS_DIR, ANTHROPIC_API_KEY, FIREWORKS_API_KEY
+
+from config import load_manifest, check_manifest_evidence, get_session_constraints
+from orchestrator import (
+    create_session, load_session, save_session, list_sessions, run_stage1, run_stage2, run_stage3, run_stage4, run_stage5, generate_final_report
+)
+from agents import Synthesizer, Skeptic
+from gate_manager import GateManager
 
 
 def _check_env():
-    missing = []
-    if not ANTHROPIC_API_KEY:
-        missing.append("ANTHROPIC_API_KEY")
+    from config import FIREWORKS_API_KEY
     if not FIREWORKS_API_KEY:
-        missing.append("FIREWORKS_API_KEY")
-    if missing:
-        print(f"Error: missing environment variables: {', '.join(missing)}")
-        print("Copy .env.example to .env, fill in keys (Anthropic + Fireworks.ai), then: source .env")
+        print("Error: FIREWORKS_API_KEY not set. Check .env file.")
         sys.exit(1)
 
 
-def _create_session(niche: str, lead_focus: str, start_stage: int) -> dict:
-    session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    return {
-        "session_id": session_id,
-        "niche": niche,
-        "lead_focus": lead_focus,
-        "created_at": datetime.now().isoformat(),
-        "current_stage": start_stage,
-        "stages": {},
-        "transcript": [],
-        "final_confidence": None,
-    }
-
-
-def _load_session(session_id: str) -> dict:
-    path = os.path.join(SESSIONS_DIR, f"{session_id}.json")
-    if not os.path.exists(path):
-        print(f"Error: session not found at {path}")
-        sys.exit(1)
-    with open(path) as f:
-        return json.load(f)
-
-
-def _list_sessions():
-    os.makedirs(SESSIONS_DIR, exist_ok=True)
-    files = sorted(
-        [f for f in os.listdir(SESSIONS_DIR) if f.endswith(".json")],
-        reverse=True,
-    )
-    if not files:
-        print("No sessions found.")
+def _handle_gate(result, session, manifest_path, niche_hint, auto_approve=False, stage_num=1, non_interactive=False):
+    """Handle the human gate after any stage deliberation."""
+    if result["status"] != "gate":
         return
-    print("Available sessions:")
-    for f in files:
-        session_id = f[:-5]
-        path = os.path.join(SESSIONS_DIR, f)
-        with open(path) as fp:
-            data = json.load(fp)
-        stage = data.get("current_stage", "?")
-        niche = data.get("niche", "unknown")
-        created = data.get("created_at", "")[:10]
-        print(f"  {session_id}  |  {niche}  |  stage {stage}  |  {created}")
+
+    gate_manager = GateManager()
+    decision = gate_manager.run_gate(
+        stage_num=stage_num,
+        session_id=session["session_id"],
+        gate_data=result["gate_data"],
+        auto_approve=auto_approve,
+        non_interactive=non_interactive,
+    )
+    print(f"\n🚪 Gate decision: {decision['decision'].upper()}")
+
+    if decision["decision"] == "reject" and decision.get("rationale"):
+        manifest = session.get("manifest", load_manifest(manifest_path))
+        if stage_num == 1:
+            manifest.setdefault("ruled_out_niches", []).append({
+                "niche": niche_hint or session["session_id"],
+                "reason": decision["rationale"],
+                "rejected_by": "human",
+            })
+            manifest_path = manifest_path or "manifest.json"
+            with open(manifest_path, "w") as f:
+                json.dump(manifest, f, indent=2)
+            print(f"   Rejection rationale saved to manifest.")
+        elif stage_num == 2:
+            # Stage 2 rejection means go back to Stage 1
+            print(f"   Rejection rationale: {decision['rationale']}")
+            print("   Returning to Stage 1. Resume with:")
+            session["current_stage"] = 1
+            if "approved_pain_point" in session:
+                del session["approved_pain_point"]
+            save_session(session)
+            print(f"   python main.py --resume {session['session_id']} --stage 1")
+            return
+        elif stage_num == 3:
+            # Stage 3 rejection means go back to Stage 2
+            print(f"   Rejection rationale: {decision['rationale']}")
+            print("   Returning to Stage 2. Resume with:")
+            session["current_stage"] = 2
+            if "approved_solution" in session:
+                del session["approved_solution"]
+            save_session(session)
+            print(f"   python main.py --resume {session['session_id']} --stage 2")
+            return
+        elif stage_num == 4:
+            # Stage 4 rejection means go back to Stage 3
+            print(f"   Rejection rationale: {decision['rationale']}")
+            print("   Returning to Stage 3. Resume with:")
+            session["current_stage"] = 3
+            if "approved_business_model" in session:
+                del session["approved_business_model"]
+            save_session(session)
+            print(f"   python main.py --resume {session['session_id']} --stage 3")
+            return
+        elif stage_num == 5:
+            # Stage 5 rejection means go back to Stage 4
+            print(f"   Rejection rationale: {decision['rationale']}")
+            print("   Returning to Stage 4. Resume with:")
+            session["current_stage"] = 4
+            if "approved_sprint" in session:
+                del session["approved_sprint"]
+            save_session(session)
+            print(f"   python main.py --resume {session['session_id']} --stage 4")
+            return
+
+    if decision["decision"] == "approve":
+        gate_data = result.get("gate_data", {})
+        if stage_num == 1:
+            # Store the approved niche from gate rankings
+            synth_ranking = gate_data.get("synthesizer_ranking", [])
+            sk_ranking = gate_data.get("skeptic_ranking", [])
+            approved = synth_ranking[0] if synth_ranking else (sk_ranking[0] if sk_ranking else "")
+            session["approved_niche"] = approved
+            session["current_stage"] = 2
+            save_session(session)
+            print(f"   Approved niche: {approved}")
+            print("   Session advanced to Stage 2. Resume with:")
+            print(f"   python main.py --resume {session['session_id']} --stage 2")
+        elif stage_num == 2:
+            # Store the approved pain point
+            pain_points = gate_data.get("pain_points", [])
+            approved_pp = pain_points[0].get("name", "") if pain_points else ""
+            session["approved_pain_point"] = approved_pp
+            session["current_stage"] = 3
+            save_session(session)
+            print(f"   Approved pain point: {approved_pp}")
+            print("   Session advanced to Stage 3. Resume with:")
+            print(f"   python main.py --resume {session['session_id']} --stage 3")
+        elif stage_num == 3:
+            # Store the approved solution
+            solutions = gate_data.get("solutions", [])
+            approved_sol = solutions[0].get("name", "") if solutions else ""
+            session["approved_solution"] = approved_sol
+            session["current_stage"] = 4
+            save_session(session)
+            print(f"   Approved solution: {approved_sol}")
+            print("   Session advanced to Stage 4. Resume with:")
+            print(f"   python main.py --resume {session['session_id']} --stage 4")
+        elif stage_num == 4:
+            # Store the approved business model
+            pricing_tiers = gate_data.get("pricing_tiers", [])
+            unit_economics = gate_data.get("unit_economics", {})
+            session["approved_business_model"] = {
+                "pricing_tiers": pricing_tiers,
+                "unit_economics": unit_economics,
+                "cac_tier": gate_data.get("cac_tier"),
+                "cac_kill_triggered": gate_data.get("cac_kill_triggered", False),
+            }
+            session["current_stage"] = 5
+            save_session(session)
+            print(f"   Approved business model")
+            if unit_economics.get("cac") is not None:
+                print(f"   CAC: £{unit_economics['cac']:.0f} ({unit_economics.get('cac_tier', '?')})")
+            print("   Session advanced to Stage 5. Resume with:")
+            print(f"   python main.py --resume {session['session_id']} --stage 5")
+        elif stage_num == 5:
+            # Store the approved sprint plan and generate final report
+            experiments = gate_data.get("experiments", [])
+            session["approved_sprint"] = {
+                "experiments": experiments,
+                "sprint_duration_days": gate_data.get("sprint_duration_days", 30),
+            }
+            session["current_stage"] = 6
+            save_session(session)
+            print(f"   Approved validation sprint: {len(experiments)} experiments")
+            print("   ✅ ALL GATES PASSED — generating final report...")
+            
+            report = generate_final_report(session)
+            report_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "sessions",
+                f"{session['session_id']}-report.md"
+            )
+            with open(report_path, "w") as f:
+                f.write(report)
+            print(f"\n📄 Final report saved: {report_path}")
+            print("\n" + "="*70)
+            print("  VALIDATION COMPLETE")
+            print("="*70)
+
+    if decision["decision"] == "refine":
+        print(f"   Refinement requested: {decision.get('rationale', 'No rationale provided')}")
+        print("   Re-run with updated manifest or resume to continue deliberation.")
+
+    if decision["decision"] == "timeout":
+        print("   Gate timed out. Session saved. Resume when ready:")
+        print(f"   python main.py --resume {session['session_id']} --stage {stage_num}")
+
+
+def _run_new_session(manifest_path: str, niche_hint: str = "", auto_approve: bool = False, non_interactive: bool = False):
+    manifest = load_manifest(manifest_path)
+
+    # Check blocking evidence
+    blocking = check_manifest_evidence(manifest)
+    if blocking:
+        print("\n⛔ BLOCKING evidence required before Stage 1 can start:\n")
+        for item in blocking:
+            print(f"  - {item['field']} (resolution: {item['resolution']})")
+        print("\nPlease resolve these in your manifest and re-run.")
+        sys.exit(1)
+
+    session = create_session(manifest, niche_hint)
+    synthesizer = Synthesizer()
+    skeptic = Skeptic()
+
+    try:
+        result = run_stage1(session, synthesizer, skeptic)
+        session["stages"]["1"] = result
+        session["transcript"] = result.get("transcript", [])
+        save_session(session)
+
+        _handle_gate(result, session, manifest_path, niche_hint, auto_approve=auto_approve, non_interactive=non_interactive)
+
+    except KeyboardInterrupt:
+        print("\n\nInterrupted. Saving session...")
+        save_session(session)
+        sys.exit(0)
+
+
+def _run_resume(session_id: str, stage_num: int, auto_approve: bool = False, non_interactive: bool = False):
+    session = load_session(session_id)
+    manifest = session.get("manifest", {})
+    constraints = get_session_constraints(manifest)
+
+    print(f"\nResuming session: {session_id}")
+    print(f"  Stage: {stage_num}")
+    print(f"  Pivot count: {session.get('pivot_count', 0)}/{constraints['max_pivots']}")
+
+    if stage_num == 1:
+        synthesizer = Synthesizer()
+        skeptic = Skeptic()
+
+        # Restore agent histories if available from previous session
+        histories = session.get("agent_histories", {})
+        if histories.get("synthesizer"):
+            synthesizer.restore(histories["synthesizer"])
+            print(f"  Restored Synthesizer history ({len(synthesizer.history)} messages)")
+        if histories.get("skeptic"):
+            skeptic.restore(histories["skeptic"])
+            skeptic.pivot_used = session.get("pivot_used", False)
+            print(f"  Restored Skeptic history ({len(skeptic.history)} messages)")
+
+        result = run_stage1(session, synthesizer, skeptic)
+        session["stages"]["1"] = result
+        session["transcript"] = result.get("transcript", [])
+        save_session(session)
+
+        _handle_gate(result, session, None, "", auto_approve=auto_approve, stage_num=1, non_interactive=non_interactive)
+    elif stage_num == 2:
+        synthesizer = Synthesizer()
+        skeptic = Skeptic()
+
+        # Restore Stage 2 agent histories if available
+        histories = session.get("agent_histories_stage2", {})
+        if histories.get("synthesizer"):
+            synthesizer.restore(histories["synthesizer"])
+            print(f"  Restored Synthesizer Stage 2 history ({len(synthesizer.history)} messages)")
+        if histories.get("skeptic"):
+            skeptic.restore(histories["skeptic"])
+            skeptic.pivot_used = session.get("pivot_used", False)
+            print(f"  Restored Skeptic Stage 2 history ({len(skeptic.history)} messages)")
+
+        result = run_stage2(session, synthesizer, skeptic)
+        session["stages"]["2"] = result
+        session["transcript"] = result.get("transcript", [])
+        save_session(session)
+
+        _handle_gate(result, session, None, "", auto_approve=auto_approve, stage_num=2, non_interactive=non_interactive)
+    elif stage_num == 3:
+        synthesizer = Synthesizer()
+        skeptic = Skeptic()
+
+        # Restore Stage 3 agent histories if available
+        histories = session.get("agent_histories_stage3", {})
+        if histories.get("synthesizer"):
+            synthesizer.restore(histories["synthesizer"])
+            print(f"  Restored Synthesizer Stage 3 history ({len(synthesizer.history)} messages)")
+        if histories.get("skeptic"):
+            skeptic.restore(histories["skeptic"])
+            skeptic.pivot_used = session.get("pivot_used", False)
+            print(f"  Restored Skeptic Stage 3 history ({len(skeptic.history)} messages)")
+
+        result = run_stage3(session, synthesizer, skeptic)
+        session["stages"]["3"] = result
+        session["transcript"] = result.get("transcript", [])
+        save_session(session)
+
+        _handle_gate(result, session, None, "", auto_approve=auto_approve, stage_num=3, non_interactive=non_interactive)
+    elif stage_num == 4:
+        synthesizer = Synthesizer()
+        skeptic = Skeptic()
+
+        # Restore Stage 4 agent histories if available
+        histories = session.get("agent_histories_stage4", {})
+        if histories.get("synthesizer"):
+            synthesizer.restore(histories["synthesizer"])
+            print(f"  Restored Synthesizer Stage 4 history ({len(synthesizer.history)} messages)")
+        if histories.get("skeptic"):
+            skeptic.restore(histories["skeptic"])
+            skeptic.pivot_used = session.get("pivot_used", False)
+            print(f"  Restored Skeptic Stage 4 history ({len(skeptic.history)} messages)")
+
+        result = run_stage4(session, synthesizer, skeptic)
+        session["stages"]["4"] = result
+        session["transcript"] = result.get("transcript", [])
+        save_session(session)
+
+        _handle_gate(result, session, None, "", auto_approve=auto_approve, stage_num=4, non_interactive=non_interactive)
+    elif stage_num == 5:
+        synthesizer = Synthesizer()
+        skeptic = Skeptic()
+
+        # Restore Stage 5 agent histories if available
+        histories = session.get("agent_histories_stage5", {})
+        if histories.get("synthesizer"):
+            synthesizer.restore(histories["synthesizer"])
+            print(f"  Restored Synthesizer Stage 5 history ({len(synthesizer.history)} messages)")
+        if histories.get("skeptic"):
+            skeptic.restore(histories["skeptic"])
+            skeptic.pivot_used = session.get("pivot_used", False)
+            print(f"  Restored Skeptic Stage 5 history ({len(skeptic.history)} messages)")
+
+        result = run_stage5(session, synthesizer, skeptic)
+        session["stages"]["5"] = result
+        session["transcript"] = result.get("transcript", [])
+        save_session(session)
+
+        _handle_gate(result, session, None, "", auto_approve=auto_approve, stage_num=5, non_interactive=non_interactive)
+    else:
+        print(f"Stage {stage_num} not yet implemented in this version.")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Startup idea validation via Claude + Kimi K2.6 discussion pipeline."
+        description="Falsification Engine: Dual-Agent Deliberation for Startup Validation"
     )
-    parser.add_argument("--niche", help="Niche to validate (e.g. 'MOT Reminder SaaS')")
-    parser.add_argument(
-        "--lead-focus",
-        default="",
-        help="Lead base segment to bias toward (e.g. automotive, beauty_health)",
-    )
-    parser.add_argument(
-        "--start-stage",
-        type=int,
-        default=1,
-        choices=range(1, 6),
-        help="Stage to start from (1-5). Default: 1",
-    )
-    parser.add_argument(
-        "--end-stage",
-        type=int,
-        default=5,
-        choices=range(1, 6),
-        help="Stage to stop after (1-5). Default: 5",
-    )
-    parser.add_argument("--resume", metavar="SESSION_ID", help="Resume an existing session")
-    parser.add_argument("--stage", type=int, help="Stage to resume from (used with --resume)")
-    parser.add_argument("--list", action="store_true", help="List all sessions")
-    parser.add_argument(
-        "--mode",
-        choices=["fresh"],
-        help="Mode: 'fresh' starts a new session with lead-focus guidance",
-    )
+    parser.add_argument("--manifest", default="manifest.json",
+                        help="Path to manifest JSON (default: manifest.json)")
+    parser.add_argument("--niche", default="",
+                        help="Optional niche hint or name")
+    parser.add_argument("--resume", metavar="SESSION_ID",
+                        help="Resume an existing session")
+    parser.add_argument("--stage", type=int, default=1,
+                        help="Stage to resume from (default: 1)")
+    parser.add_argument("--list", action="store_true",
+                        help="List all sessions")
+    parser.add_argument("--test", action="store_true",
+                        help="Test mode: auto-approve gates without human review")
+    parser.add_argument("--non-interactive", action="store_true",
+                        help="Use file-watching gate instead of terminal prompt (for CI/automation)")
+    parser.add_argument("--report", metavar="SESSION_ID",
+                        help="Generate final report from an existing completed session")
+    parser.add_argument("--refresh-leads", action="store_true",
+                        help="Query Supabase for live lead counts and exit")
 
     args = parser.parse_args()
 
+    if args.report:
+        session = load_session(args.report)
+        report = generate_final_report(session)
+        report_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "sessions",
+            f"{session['session_id']}-report.md"
+        )
+        with open(report_path, "w") as f:
+            f.write(report)
+        print(f"📄 Report generated: {report_path}")
+        return
+
+    if args.refresh_leads:
+        from tools import refresh_lead_counts, format_lead_counts
+        refresh_lead_counts()
+        print(format_lead_counts())
+        return
+
     if args.list:
-        _list_sessions()
+        list_sessions()
         return
 
     _check_env()
 
-    from orchestrator import run_session
-
     if args.resume:
-        session = _load_session(args.resume)
-        start_stage = args.stage or session.get("current_stage", 1)
-        end_stage = args.end_stage
-        print(f"\nResuming session: {args.resume}")
-        print(f"Niche: {session['niche']}  |  Resuming from stage {start_stage}")
+        _run_resume(args.resume, args.stage, auto_approve=args.test, non_interactive=args.non_interactive)
     else:
-        niche = args.niche
-        if not niche:
-            if args.mode == "fresh":
-                niche = input("Enter the niche or idea to validate: ").strip()
-            else:
-                print("Error: --niche is required (or use --mode fresh for interactive input).")
-                parser.print_help()
-                sys.exit(1)
-        start_stage = args.start_stage
-        end_stage = args.end_stage
-        session = _create_session(niche, args.lead_focus, start_stage)
-        print(f"\nNew session: {session['session_id']}")
-        print(f"Niche: {niche}  |  Stages {start_stage}–{end_stage}")
-
-    try:
-        run_session(session, start_stage=start_stage, end_stage=end_stage)
-    except KeyboardInterrupt:
-        print("\n\nInterrupted. Session progress saved.")
-        sys.exit(0)
+        _run_new_session(args.manifest, args.niche, auto_approve=args.test, non_interactive=args.non_interactive)
 
 
 if __name__ == "__main__":

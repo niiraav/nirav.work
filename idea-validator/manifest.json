@@ -1,0 +1,50 @@
+{
+  "lead_segments": {
+    "automotive": 8200,
+    "food_hospitality": 12800,
+    "beauty_health": 7800,
+    "professional_services": 5300,
+    "ecom": 7514,
+    "trades": 3400
+  },
+  "technical_constraints": [
+    "Web-first — no native mobile app required at MVP stage",
+    "If niche requires government API (DVSA, HMRC): verify API is publicly available before building",
+    "No hardware dependencies at MVP — software-only",
+    "Must work without custom enterprise integrations in v1"
+  ],
+  "budget_ceiling": {
+    "monthly_burn": 5000,
+    "max_cac": 50
+  },
+  "timeline_months": 6,
+  "known_competitors": [
+    {
+      "name": "Garage Hive",
+      "known_weakness": "Not EV-native",
+      "threat_trajectory": "unknown"
+    }
+  ],
+  "ruled_out_niches": [],
+  "required_evidence": [
+    {
+      "field": "dvsa_api_status",
+      "resolution": "human",
+      "blocking": false,
+      "status": "pending",
+      "value": "unknown"
+    },
+    {
+      "field": "willingness_to_pay",
+      "resolution": "research",
+      "blocking": false,
+      "status": "pending",
+      "value": null
+    }
+  ],
+  "session_constraints": {
+    "max_pivots": 1,
+    "max_turns_per_stage": 4,
+    "token_ceiling": 80000
+  }
+}

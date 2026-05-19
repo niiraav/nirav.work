@@ -1,0 +1,49 @@
+{
+  "lead_segments": {
+    "automotive": 8200,
+    "food_hospitality": 12800,
+    "beauty_health": 7800,
+    "professional_services": 5300,
+    "ecom": 7514,
+    "trades": 3400
+  },
+  "technical_constraints": [
+    "No mobile app required — web-first acceptable",
+    "Must integrate with existing UK HMRC systems if tax-related",
+    "Cannot require DVSA licensing if API unavailable"
+  ],
+  "budget_ceiling": {
+    "monthly_burn": 5000,
+    "max_cac": 50
+  },
+  "timeline_months": 6,
+  "known_competitors": [
+    {
+      "name": "Garage Hive",
+      "known_weakness": "Not EV-native",
+      "threat_trajectory": "unknown"
+    }
+  ],
+  "ruled_out_niches": [],
+  "required_evidence": [
+    {
+      "field": "dvsa_api_status",
+      "resolution": "human",
+      "blocking": true,
+      "status": "pending",
+      "value": null
+    },
+    {
+      "field": "willingness_to_pay",
+      "resolution": "research",
+      "blocking": false,
+      "status": "pending",
+      "value": null
+    }
+  ],
+  "session_constraints": {
+    "max_pivots": 1,
+    "max_turns_per_stage": 5,
+    "token_ceiling": 80000
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Idea Validator Manifest",
+  "type": "object",
+  "required": ["lead_segments", "technical_constraints", "budget_ceiling", "timeline_months", "known_competitors", "ruled_out_niches", "required_evidence", "session_constraints"],
+  "properties": {
+    "lead_segments": {
+      "type": "object",
+      "description": "Verified lead counts per segment",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "technical_constraints": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Hard technical limitations that cannot be violated"
+    },
+    "budget_ceiling": {
+      "type": "object",
+      "required": ["monthly_burn", "max_cac"],
+      "properties": {
+        "monthly_burn": { "type": "number", "minimum": 0 },
+        "max_cac": { "type": "number", "minimum": 0 }
+      }
+    },
+    "timeline_months": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 36,
+      "description": "Months until launch deadline"
+    },
+    "known_competitors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "known_weakness", "threat_trajectory"],
+        "properties": {
+          "name": { "type": "string" },
+          "known_weakness": { "type": "string" },
+          "threat_trajectory": {
+            "type": "string",
+            "enum": ["unknown", "static", "growing", "declining"],
+            "description": "Simplified competitive velocity; updated during Stage 2 research"
+          }
+        }
+      }
+    },
+    "ruled_out_niches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["niche", "reason", "rejected_by"],
+        "properties": {
+          "niche": { "type": "string" },
+          "reason": { "type": "string" },
+          "rejected_by": { "type": "string", "enum": ["skeptic", "human", "system"] }
+        }
+      },
+      "description": "Previously rejected niches from prior sessions"
+    },
+    "required_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "resolution", "blocking"],
+        "properties": {
+          "field": { "type": "string" },
+          "resolution": {
+            "type": "string",
+            "enum": ["human", "research", "manifest"]
+          },
+          "blocking": { "type": "boolean" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "resolved"],
+            "default": "pending"
+          },
+          "value": { "description": "Human-provided value when resolved" }
+        }
+      }
+    },
+    "session_constraints": {
+      "type": "object",
+      "required": ["max_pivots", "max_turns_per_stage", "token_ceiling"],
+      "properties": {
+        "max_pivots": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "max_turns_per_stage": { "type": "integer", "minimum": 3, "maximum": 10 },
+        "token_ceiling": { "type": "integer", "minimum": 10000 }
+      }
+    }
+  }
+}
