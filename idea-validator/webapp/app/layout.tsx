@@ -1,3 +1,5 @@
+import { Providers } from "./providers";
+
 export const metadata = {
   title: "Idea Validator",
   description: "Dual-agent startup idea validation",
@@ -6,7 +8,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white">{children}</body>
+      <body className="min-h-screen bg-white">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

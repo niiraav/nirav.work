@@ -1,10 +1,13 @@
 // webapp/mocks/handlers.ts
 // Mock Service Worker handlers — serve the session fixture for dev.
-// Import these in your test setup or browser entrypoint.
+// Activated via NEXT_PUBLIC_MSW=true in .env.local.
+// Uses absolute URLs so MSW intercepts fetch() calls that use the API_BASE.
 
 import { http, HttpResponse } from "msw";
 import fixture from "./session-fixture.json";
 import type { SessionSummary, SessionState } from "../lib/types";
+
+const API_BASE = "http://localhost:8000";
 
 function toSummary(raw: SessionState): SessionSummary {
   return {
@@ -19,11 +22,11 @@ function toSummary(raw: SessionState): SessionSummary {
 }
 
 export const handlers = [
-  http.get("/sessions", () => HttpResponse.json([toSummary(fixture as unknown as SessionState)])),
+  http.get(`${API_BASE}/sessions`, () => HttpResponse.json([toSummary(fixture as unknown as SessionState)])),
 
-  http.get("/sessions/:id", () => HttpResponse.json(fixture)),
+  http.get(`${API_BASE}/sessions/:id`, () => HttpResponse.json(fixture)),
 
-  http.post("/sessions", async ({ request }) => {
+  http.post(`${API_BASE}/sessions`, async ({ request }) => {
     const body = (await request.json()) as { niche_hint?: string };
     return HttpResponse.json(
       {
@@ -39,20 +42,20 @@ export const handlers = [
     );
   }),
 
-  http.post("/sessions/:id/run", () =>
+  http.post(`${API_BASE}/sessions/:id/run`, () =>
     HttpResponse.json({ status: "started" }, { status: 202 })
   ),
 
-  http.post("/sessions/:id/gate/:stage", async ({ request }) => {
+  http.post(`${API_BASE}/sessions/:id/gate/:stage`, async ({ request }) => {
     const body = (await request.json()) as { decision: string };
     return HttpResponse.json({ status: "ok", decision: body.decision });
   }),
 
-  http.get("/sessions/:id/report", () =>
+  http.get(`${API_BASE}/sessions/:id/report`, () =>
     HttpResponse.json({ markdown: "# Stub Report\n\nValidation complete." })
   ),
 
-  http.post("/sessions/validate-manifest", () =>
+  http.post(`${API_BASE}/sessions/validate-manifest`, () =>
     HttpResponse.json({ valid: true, errors: [] })
   ),
 ];

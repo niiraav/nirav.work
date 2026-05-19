@@ -51,8 +51,14 @@ export default function SessionPage() {
       )}
 
       {error && (
-        <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-          {error}
+        <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded space-y-2">
+          <p className="text-sm text-red-700">{error}</p>
+          <button
+            onClick={() => startPipeline(params.id, session?.current_stage ?? 1)}
+            className="text-sm px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Retry from Stage {session?.current_stage ?? 1}
+          </button>
         </div>
       )}
 
@@ -83,15 +89,13 @@ export default function SessionPage() {
       )}
 
       {status === "done" && (
-        <div className="p-4 text-center">
-          <p className="text-green-700 font-semibold mb-2">Pipeline complete</p>
+        <div className="p-4 text-center space-y-2">
+          <p className="text-green-700 font-semibold">Pipeline complete ✓</p>
           <a
-            href={`${API}/sessions/${params.id}/report`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-blue-600 underline"
+            href={`/sessions/${params.id}/report`}
+            className="inline-block px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700"
           >
-            View report
+            View Report
           </a>
         </div>
       )}
