@@ -69,6 +69,10 @@ class GateDecision(BaseModel):
     approved_item: str = ""  # niche / pain point / solution name
 
 
+class RunRequest(BaseModel):
+    stage: int = Field(default=1, ge=1, le=5, description="Stage to start/resume from")
+
+
 # ---------------------------------------------------------------------------
 # Session response models
 # ---------------------------------------------------------------------------

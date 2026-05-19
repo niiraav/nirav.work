@@ -1,51 +1,32 @@
-"""REST routes for session CRUD and pipeline control.
-
-All routes return valid stub responses — real logic wired in Week 3.
-"""
+"""REST routes for session CRUD and pipeline control."""
 
 import json
-import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from api.models import (
     CreateSessionRequest,
     GateDecision,
     ManifestModel,
-    SessionState,
-    SessionSummary,
+    RunRequest,
 )
-from api.runner import runner
+from api.runner import PipelineRunner, runner as _default_runner
 
 router = APIRouter()
 
-SESSIONS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sessions")
+
+def get_runner() -> PipelineRunner:
+    return _default_runner
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _list_session_files() -> List[str]:
-    """Return sorted list of session JSON filenames."""
-    if not os.path.isdir(SESSIONS_DIR):
-        return []
-    files = [f for f in os.listdir(SESSIONS_DIR) if f.endswith(".json") and f.startswith("session_")]
-    return sorted(files)
-
-
-def _load_session(session_id: str) -> Dict[str, Any]:
-    path = os.path.join(SESSIONS_DIR, f"{session_id}.json")
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
-    with open(path) as f:
-        return json.load(f)
-
-
 def _to_summary(raw: Dict[str, Any]) -> Dict[str, Any]:
-    """Strip full session down to summary fields."""
     return {
         "session_id": raw.get("session_id", "unknown"),
         "created_at": raw.get("created_at", ""),
@@ -58,87 +39,108 @@ def _to_summary(raw: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Routes
+# Routes — note: /sessions/validate-manifest must appear before /{session_id}
 # ---------------------------------------------------------------------------
+
+@router.post("/sessions/validate-manifest")
+def validate_manifest(manifest: ManifestModel) -> Dict[str, Any]:
+    """Validate a manifest JSON without creating a session."""
+    return {"valid": True, "errors": []}
+
 
 @router.post("/sessions", status_code=201)
 def create_session(req: CreateSessionRequest) -> Dict[str, Any]:
-    """Create a new session from a manifest."""
-    session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    session = {
-        "session_id": session_id,
-        "manifest": req.manifest.model_dump(),
-        "niche_hint": req.niche_hint,
-        "created_at": datetime.now().isoformat(),
-        "current_stage": 1,
-        "pivot_count": 0,
-        "pivot_used": False,
-        "kill_conditions": [],
-        "stages": {},
-        "transcript": [],
-        "token_usage": [],
-    }
-    os.makedirs(SESSIONS_DIR, exist_ok=True)
-    with open(os.path.join(SESSIONS_DIR, f"{session_id}.json"), "w") as f:
-        json.dump(session, f, indent=2)
+    """Create a new session from a manifest using the orchestrator."""
+    from orchestrator import create_session as _create, save_session
+    session = _create(req.manifest.model_dump(), req.niche_hint)
+    save_session(session)
     return _to_summary(session)
 
 
 @router.get("/sessions")
 def list_sessions() -> List[Dict[str, Any]]:
     """List all sessions (summary only)."""
-    return [_to_summary(_load_session(f.replace(".json", ""))) for f in _list_session_files()]
+    from config import SESSIONS_DIR
+    summaries = []
+    sessions_path = Path(SESSIONS_DIR)
+    if not sessions_path.exists():
+        return summaries
+    for f in sorted(sessions_path.glob("session_*.json"), reverse=True):
+        if "-report" in f.stem:
+            continue
+        try:
+            raw = json.loads(f.read_text())
+            summaries.append(_to_summary(raw))
+        except Exception:
+            pass
+    return summaries
 
 
 @router.get("/sessions/{session_id}")
 def get_session(session_id: str) -> Dict[str, Any]:
     """Full session state."""
-    return _load_session(session_id)
+    from orchestrator import load_session
+    try:
+        session = load_session(session_id)
+        session["transcript"] = list(session.get("transcript", []))
+        return session
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
 
 @router.delete("/sessions/{session_id}", status_code=204)
 def delete_session(session_id: str) -> None:
     """Delete a session file."""
-    path = os.path.join(SESSIONS_DIR, f"{session_id}.json")
-    if os.path.exists(path):
-        os.remove(path)
+    from config import SESSIONS_DIR
+    path = Path(SESSIONS_DIR) / f"{session_id}.json"
+    if path.exists():
+        path.unlink()
     return None
 
 
-@router.post("/sessions/{session_id}/run")
-def run_session(session_id: str) -> Dict[str, str]:
+@router.post("/sessions/{session_id}/run", status_code=202)
+def run_session(
+    session_id: str,
+    body: RunRequest,
+    pipeline: PipelineRunner = Depends(get_runner),
+) -> Dict[str, Any]:
     """Start or resume pipeline for a session."""
-    # Validate session exists
-    _load_session(session_id)
-    # Stub — Week 3: runner.start_session(session_id, manifest, niche_hint)
-    return {"status": "started", "session_id": session_id}
+    from orchestrator import load_session
+    try:
+        load_session(session_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+    if pipeline.is_running(session_id):
+        raise HTTPException(status_code=409, detail="Pipeline already running for this session")
+    pipeline.start_pipeline(session_id, body.stage)
+    return {"status": "started", "session_id": session_id, "stage": body.stage}
 
 
 @router.post("/sessions/{session_id}/gate/{stage}")
-def submit_gate(session_id: str, stage: int, req: GateDecision) -> Dict[str, Any]:
+def submit_gate(
+    session_id: str,
+    stage: int,
+    req: GateDecision,
+    pipeline: PipelineRunner = Depends(get_runner),
+) -> Dict[str, Any]:
     """Submit a human gate decision."""
-    # Validate session exists
-    _load_session(session_id)
-    # Stub — Week 3: runner.submit_gate(session_id, stage, req.model_dump())
-    return {"status": "ok", "decision": req.decision, "stage": stage}
+    try:
+        pipeline.submit_gate(session_id, {
+            "decision": req.decision,
+            "rationale": req.rationale,
+            "approved_item": req.approved_item,
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+    except KeyError:
+        raise HTTPException(status_code=409, detail="No gate is waiting for a decision")
+    return {"status": "ok"}
 
 
 @router.get("/sessions/{session_id}/report")
 def get_report(session_id: str) -> Dict[str, str]:
     """Return the final validation report markdown (if generated)."""
-    report_path = os.path.join(SESSIONS_DIR, f"{session_id}-report.md")
-    if os.path.exists(report_path):
-        with open(report_path) as f:
-            return {"markdown": f.read()}
-    # Fallback: check if session has a report field
-    session = _load_session(session_id)
-    if "report" in session:
-        return {"markdown": session["report"]}
+    from config import SESSIONS_DIR
+    path = Path(SESSIONS_DIR) / f"{session_id}-report.md"
+    if path.exists():
+        return {"markdown": path.read_text()}
     raise HTTPException(status_code=404, detail="Report not yet generated")
-
-
-@router.post("/sessions/validate-manifest")
-def validate_manifest(manifest: ManifestModel) -> Dict[str, Any]:
-    """Validate a manifest JSON without creating a session."""
-    # Pydantic already validated the shape; any logic checks go here
-    return {"valid": True, "errors": []}

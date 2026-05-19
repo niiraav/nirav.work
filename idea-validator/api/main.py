@@ -3,10 +3,13 @@
 Registers REST and WebSocket routers.  CORS enabled for Next.js dev server.
 """
 
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import sessions, ws
+from api.runner import runner as _runner
 
 app = FastAPI(
     title="Idea Validator API",
@@ -26,6 +29,11 @@ app.add_middleware(
 # Routers
 app.include_router(sessions.router, prefix="", tags=["sessions"])
 app.include_router(ws.router, prefix="", tags=["websocket"])
+
+
+@app.on_event("startup")
+async def startup():
+    _runner.set_event_loop(asyncio.get_event_loop())
 
 
 @app.get("/health")

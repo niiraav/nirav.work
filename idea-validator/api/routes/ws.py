@@ -1,31 +1,34 @@
-"""WebSocket route — echo stub for Week 2.
-
-Real streaming (stdout capture + pipeline thread) wired in Week 3.
-"""
+"""WebSocket route — real streaming implementation for Week 3."""
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from api.runner import runner
+from api.runner import runner as _runner
 
 router = APIRouter()
 
 
 @router.websocket("/sessions/{session_id}/stream")
 async def ws_stream(websocket: WebSocket, session_id: str):
-    """WebSocket for real-time pipeline output.
+    """Real-time pipeline stream.
 
-    Messages (server → client):
-      {"type": "log", "text": "  ROUND 2/4"}
-      {"type": "transcript", "entry": {...}}
-      {"type": "gate", "stage": 3, "gate_data": {...}}
-      {"type": "done", "session_id": "..."}
-      {"type": "error", "message": "..."}
+    On connect: sends {"type": "state", "session": <full session>}
+    While running: receives {"type": "log"|"transcript"|"gate"|"done"|"error"}
+    Client sends keep-alive pings; pipeline pushes messages to this socket.
     """
     await websocket.accept()
+    await _runner.register_ws(session_id, websocket)
+
+    # Send current session snapshot so the client can hydrate without a REST call
+    try:
+        from orchestrator import load_session
+        session = load_session(session_id)
+        session["transcript"] = list(session.get("transcript", []))
+        await websocket.send_json({"type": "state", "session": session})
+    except FileNotFoundError:
+        pass
+
     try:
         while True:
-            # Echo anything the client sends (heartbeat / keep-alive)
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Echo: {data}")
+            await websocket.receive_text()  # keep-alive; pipeline pushes to us
     except WebSocketDisconnect:
-        pass
+        await _runner.unregister_ws(session_id, websocket)
