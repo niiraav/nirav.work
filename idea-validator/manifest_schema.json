@@ -6,21 +6,33 @@
   "properties": {
     "lead_segments": {
       "type": "object",
-      "description": "Verified lead counts per segment",
-      "additionalProperties": { "type": "integer", "minimum": 0 }
+      "description": "Your verified lead counts per market segment. The engine weights niche suggestions proportionally.",
+      "additionalProperties": { "type": "integer", "minimum": 0 },
+      "examples": [{ "trades": 109, "beauty_health": 21, "ecom": 7514 }]
     },
     "technical_constraints": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Hard technical limitations that cannot be violated"
+      "description": "Hard constraints enforced at every stage. Use to block ideas out of scope for your MVP.",
+      "examples": [["No mobile app", "Must integrate with Xero/FreeAgent", "GDPR compliant from day 1"]]
     },
     "budget_ceiling": {
       "type": "object",
+      "description": "Financial guardrails. CAC > £100 auto-kills. £50–100 triggers weak warning.",
       "required": ["monthly_burn", "max_cac"],
       "properties": {
-        "monthly_burn": { "type": "number", "minimum": 0 },
-        "max_cac": { "type": "number", "minimum": 0 }
-      }
+        "monthly_burn": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Monthly burn rate in GBP"
+        },
+        "max_cac": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Max Customer Acquisition Cost in GBP. CAC > £100 auto-kills. £50–100 triggers weak warning."
+        }
+      },
+      "examples": [{ "monthly_burn": 5000, "max_cac": 50 }]
     },
     "timeline_months": {
       "type": "integer",
@@ -80,12 +92,28 @@
     },
     "session_constraints": {
       "type": "object",
+      "description": "Pipeline behaviour limits",
       "required": ["max_pivots", "max_turns_per_stage", "token_ceiling"],
       "properties": {
-        "max_pivots": { "type": "integer", "minimum": 0, "maximum": 3 },
-        "max_turns_per_stage": { "type": "integer", "minimum": 3, "maximum": 10 },
-        "token_ceiling": { "type": "integer", "minimum": 10000 }
-      }
+        "max_pivots": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "How many times the Skeptic can demand a full restart (0–3)"
+        },
+        "max_turns_per_stage": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 10,
+          "description": "Debate rounds per stage (3–10). Higher = more thorough but slower. Recommended: 4."
+        },
+        "token_ceiling": {
+          "type": "integer",
+          "minimum": 10000,
+          "description": "Hard stop if total tokens exceed this across all stages"
+        }
+      },
+      "examples": [{ "max_pivots": 1, "max_turns_per_stage": 4, "token_ceiling": 80000 }]
     }
   }
 }

@@ -562,10 +562,29 @@ class GateManager:
                     "timestamp": datetime.now().isoformat(),
                 }
 
-    def run_gate(self, stage_num: int, session_id: str, gate_data: Dict[str, Any], auto_approve: bool = False, non_interactive: bool = False) -> Dict[str, Any]:
-        """Full gate lifecycle: generate, prompt/watch, extract, log."""
+    def run_gate(
+        self,
+        stage_num: int,
+        session_id: str,
+        gate_data: Dict[str, Any],
+        auto_approve: bool = False,
+        non_interactive: bool = False,
+        gate_callback=None,          # ← NEW: external decision source (webapp, tests, etc.)
+    ) -> Dict[str, Any]:
+        """Full gate lifecycle: generate, prompt/watch, extract, log.
+        
+        If `gate_callback` is provided, it receives (stage_num, gate_data) and must return
+        {"decision": "approve"|"refine"|"reject", "rationale": str, "timestamp": str}.
+        This bypasses all interactive/file-watching logic — used by the webapp backend.
+        """
         gate_data = dict(gate_data)
         gate_data["session_id"] = session_id
+        
+        # --- External callback path (webapp / automated tests) ---
+        if gate_callback is not None:
+            decision = gate_callback(stage_num, gate_data)
+            # Note: Obsidian logging skipped for callback decisions (no local gate file)
+            return decision
         
         if stage_num == 1:
             path = self.generate_stage1_gate(**gate_data)
